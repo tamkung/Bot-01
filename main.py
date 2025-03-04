@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TOKEN_DISCORD = os.getenv('TOKEN_DISCORD')
-TOKEN_LINE_NOTIFY = os.getenv('TOKEN_LINE_NOTIFY')
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL')  # ใช้ Webhook URL
 
 intents = discord.Intents.default()
 intents.voice_states = True
@@ -22,18 +22,19 @@ async def on_ready():
 async def on_voice_state_update(member, before, after):
     if before.channel is None and after.channel is not None:
         channel_name = after.channel.name
-        message = f'{member.display_name} joined a voice channel {channel_name}!'
-        send_line_notify(message)
+        message = f'🔊 {member.display_name} : joined the voice channel **{channel_name}**!'
+        send_discord_webhook(message)
     elif before.channel is not None and after.channel is None:
         channel_name = before.channel.name
-        message = f'{member.display_name} left a voice channel {channel_name}!'
-        send_line_notify(message)
+        message = f'🔇 {member.display_name} : left the voice channel **{channel_name}**!'
+        send_discord_webhook(message)
 
-def send_line_notify(message):
-    url = 'https://notify-api.line.me/api/notify'
-    headers = {'Authorization': f'Bearer {TOKEN_LINE_NOTIFY}'}
-    data = {'message': message}
-    requests.post(url, headers=headers, data=data)
+def send_discord_webhook(message):
+    url = DISCORD_WEBHOOK_URL  # ใช้ Webhook URL
+    data = {'content': message}  # Discord Webhook ใช้ key 'content'
+    response = requests.post(url, json=data)
+
+    if response.status_code != 204:
+        print(f"❌ Failed to send message: {response.status_code} - {response.text}")
 
 client.run(TOKEN_DISCORD)
-
